@@ -1270,52 +1270,54 @@ class Beacons():
         for line in fobjFileIn:
             line = line.strip()
             
-            # Check if at least first 4 letters are digits
+            # Check if at least first 4 characters are letters or numbers
+            # If numbers we can assume it is frequency information and a valid line examine further
             line1 = line[0:4]
             if line1.isdigit():
                 strFreq = line[0:8].strip()
                 # in case instead of "." is "," or ";" assume it should be a dot.
                 strFreq = Beacons.re.sub(r"[,;]",".",strFreq)
-                # Check if frequency has hz value. If true split it.
+                # Check if frequency has Hertz value, to see by a Dot in the string.
+                # If true split it.
                 if strFreq.count("."):
                     (strFreqK, strFreqH) = strFreq.split(".")
-                    # Check if there is a none digit, eliminate it.
+                    # Check if there is a letter included in Hertz value, eliminate it.
                     strFreqH = Beacons.re.sub(r"[^0-9]","",strFreqH)
-                    # Check if no. of decimals is 1, in this case add one 0
+                    # Check length of decimals, we need finally 3
+                    #  if 1 add 2 zeros, if 2 add 1 zero.
                     if len(strFreqH) == 1:
                         strFreqH = strFreqH + "00"
-                    # Check if no. of decimals is 2
                     if len(strFreqH) == 2:
                         strFreqH = strFreqH + "0"
                 else:
                     strFreqK = strFreq
-                    strFreqH = "000"
-                            
-                # Check if there is a none digit, eliminate it.    
+                    strFreqH = "000"            
+                # Check if there is a letter included in KiloHertz value, eliminate it.    
                 strFreqK = Beacons.re.sub(r"[^0-9]","",strFreqK)
-                
                 strFreq = strFreqK + strFreqH
                 intFreq = int(strFreq)
                 
+                # Extract Call sign
                 strStation = line[8:16].strip()
-                
+                if strStation.find("WSPR") != -1:
+                    continue
+
+                # Extract prefix from Call to get country information from dictionary
                 strCoHelp = strStation[:2].strip()
-                
                 if (strCoHelp in dicCountry):
                     (strCountry, strCont) = dicCountry[strCoHelp]
                 else:
                     strCountry = "undef"
                     strCont = "undef"
                 
+                # Extract Locator
                 strLoc = line[31:37].strip()
-                if strStation.find("WSPR") == -1:
-                    # DB Insert
-                    #strFreq = strFreqK + strFreqH
-                    curs.execute("INSERT INTO stations VALUES (?, ?, ?, ?, ?);", (intFreq, strStation, strLoc, strCountry, strCont))
-                    
-                    strData = str(intFreq) + ";" + strStation + ";" + strCoHelp + ";" + strLoc + ";" + strCountry + ";" + strCont + "\n"
-                    print(strData)
-                    fobjFileOut.write(strData)
+
+                # DB Insert
+                curs.execute("INSERT INTO stations VALUES (?, ?, ?, ?, ?);", (intFreq, strStation, strLoc, strCountry, strCont))
+                strData = str(intFreq) + ";" + strStation + ";" + strCoHelp + ";" + strLoc + ";" + strCountry + ";" + strCont + "\n"
+                print(strData)
+                fobjFileOut.write(strData)
         
         # Commit and close DB
         conn.commit()

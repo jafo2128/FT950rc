@@ -37,6 +37,7 @@ from PyQt5 import QtWidgets, QtCore, uic, QtGui
 from PyQt5.QtWidgets import QTableWidget,QTableWidgetItem
 from PyQt5.QtCore import *
 
+# load external module beacon.py
 import beacons
 
 #**************************
@@ -660,8 +661,9 @@ class RigPoll(QObject):
         super().__init__()
         
     def __del__(self):
-        print ("Thread2")
+        #print ("Thread2")
         #self.wait()
+        pass
 
     def work(self):
         while True:
