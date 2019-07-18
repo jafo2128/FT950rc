@@ -44,12 +44,13 @@ import beacons
 # Serial Port Basic Settings
 #**************************
 if sys.platform == "win32":
-	serPort = "COM2"
+	serPort = "COM3"
 else:
 	serPort = "/dev/ttyUSB0"
-port = serial.Serial(serPort, baudrate=38400, timeout=0.1)
+port = serial.Serial(serPort, baudrate=38400, timeout=0.1, write_timeout=0.1)
 port.rts = False
 port.dtr = False
+print(serPort)
 
 #**************************
 # Audio Devices List
@@ -73,31 +74,51 @@ strBand = ""
 #**************************************
 
 # READ POWER
-port.write(b"EX111;")
-rcv = port.read(12)
-strPout = str(rcv[5:8],'utf-8')
-print("Power: " + strPout)
+try:
+    port.write(b"EX111;")
+    rcv = port.read(12)
+    strPout = str(rcv[5:8],'utf-8')
+    print("Power: " + strPout)
+except:
+    #print("Timeout1")
+    pass
 
 # READ FREQUENCY and MODE 
-port.write(b"IF;")
-rcv = port.read(27)
-# slicing frequency info, because of byte data
-rcvk = rcv[5:10]         # khz
-rcvh = rcv[10:13]        # hz
-#self.frVfo.qrgA.set(rcvk + b"." + rcvh)
-rcvcd = rcv[13:14]       # clarifier direction +/-
-rcvco = rcv[14:18]       # clarifier h
-rcvm = rcv[20:21]        # mode
+try:
+    port.write(b"IF;")
+    rcv = port.read(27)
+    # slicing frequency info, because of byte data
+    rcvk = rcv[5:10]         # khz
+    rcvh = rcv[10:13]        # hz
+    #self.frVfo.qrgA.set(rcvk + b"." + rcvh)
+    rcvcd = rcv[13:14]       # clarifier direction +/-
+    rcvco = rcv[14:18]       # clarifier h
+    rcvm = rcv[20:21]        # mode
+except:
+    print("Timeout2")
+    rcvk = b"3500"
+    rcvh = b"200"
+    rcvm = b"2"
 
 # READ FILTER Width
-port.write(b"SH0;")
-rcv = port.read(12)
-rcvw = rcv[3:5]          # width
+try:
+    port.write(b"SH0;")
+    rcv = port.read(12)
+    rcvw = rcv[3:5]
+except:
+    print("Timeout3")
+    rcvw = b"111"
 
-#mode = str(rcvm,'utf-8')
 print(str(rcvk,'utf-8') + str(rcvh,'utf-8') + " " + str(rcvm,'utf-8') + " " + str(rcvw,'utf-8'))
-
 ##### INITIALIZE UI END #####
+
+def write2port(self, strPortData):
+    #print(strPortData)
+    try:
+        port.write(strPortData)
+    except:
+        #print("COM-Timeout")
+        pass
 
 class RigControl(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
@@ -326,7 +347,7 @@ class RigControl(QtWidgets.QMainWindow):
     def done(self, test):
         print(test)
         exit()
-        
+
     def setPwr(self):
         locpwr = self.ui.slidPower.value()
         print(locpwr)
@@ -334,7 +355,7 @@ class RigControl(QtWidgets.QMainWindow):
             locpwr1 = ( "EX11100" + str(int(locpwr)) + ";" ).encode('utf-8')
         else:
             locpwr1 = ( "EX1110" + str(int(locpwr)) + ";" ).encode('utf-8')
-        port.write(locpwr1)
+        write2port(self, locpwr1)
 
     # SET VFO to selected Station
     # get row and col of clicked cell
@@ -349,7 +370,7 @@ class RigControl(QtWidgets.QMainWindow):
         if len(textqrg) == 7:
             textqrg = "0" + textqrg
         qrg = ("FA" + textqrg + ";").encode('utf-8')
-        port.write(qrg)
+        write2port(self, qrg)
     
     # SORT Station
     def srtStation(self, event):
@@ -481,174 +502,174 @@ class RigControl(QtWidgets.QMainWindow):
     # SET Mode
     def setMLSB(self):
         #self.ui.stwBW.setCurrentIndex(1)
-        port.write(b"MD01;")
+        write2port(self, b"MD01;")
     def setMUSB(self):
         #self.ui.stwBW.setCurrentIndex(1)
-        port.write(b"MD02;")
+        write2port(self, b"MD02;")
     def setMCW(self):
         #self.ui.stwBW.setCurrentIndex(0)
-        port.write(b"MD03;")
+        write2port(self, b"MD03;")
     def setMAM(self):
         #self.ui.stwBW.setCurrentIndex(2)
-        port.write(b"MD05;")
+        write2port(self, b"MD05;")
     # SET Att 0db - -18dB
     def setAtt0(self):
-        port.write(b"RA00;")
+        write2port(self, b"RA00;")
     def setAtt6(self):
-        port.write(b"RA01;")
+        write2port(self, b"RA01;")
     def setAtt12(self):
-        port.write(b"RA02;")
+        write2port(self, b"RA02;")
     def setAtt18(self):
-        port.write(b"RA03;")
+        write2port(self, b"RA03;")
         # SET AMP Off - 2
     def setAmpOff(self):
-        port.write(b"PA00;")
+        write2port(self, b"PA00;")
     def setAmp1(self):
-        port.write(b"PA01;")
+        write2port(self, b"PA01;")
     def setAmp2(self):
-        port.write(b"PA02;")
+        write2port(self, b"PA02;")
 
     # Toggle NAR / WIDE
     def setBWNW(self, mode):
         if mode == "CW":
             if self.width2 <= "06" and self.width1 >= "07":
-                port.write(b"NA01;")
+                write2port(self, b"NA01;")
             elif self.width2 >= "07" and self.width1 <= "06":
-                port.write(b"NA00;")
+                write2port(self, b"NA00;")
         if mode == "SSB":
             if self.width2 <= "08" and self.width1 >= "09":
-                port.write(b"NA01;")
+                write2port(self, b"NA01;")
             elif self.width2 >= "09" and self.width1 <= "08":
-                port.write(b"NA00;")        
+                write2port(self, b"NA00;")        
         return
         
     # Bandwidth CW        
     def setBwCw100(self):
         self.width2 = "03"
         self.setBWNW("CW")
-        port.write(b"SH003;")
+        write2port(self, b"SH003;")
     def setBwCw200(self):
         self.width2 = "04"
         self.setBWNW("CW")
-        port.write(b"SH004;")
+        write2port(self, b"SH004;")
     def setBwCw300(self):
         self.width2 = "05"
         self.setBWNW("CW")
-        port.write(b"SH005;")
+        write2port(self, b"SH005;")
     def setBwCw400(self):
         self.width2 = "06"
         self.setBWNW("CW")
-        port.write(b"SH006;")
+        write2port(self, b"SH006;")
     def setBwCw500(self):
         self.width2 = "07"
         self.setBWNW("CW")
-        port.write(b"SH007;")
+        write2port(self, b"SH007;")
     def setBwCw800(self):
         self.width2 = "08"
         self.setBWNW("CW")
-        port.write(b"SH008;")
+        write2port(self, b"SH008;")
     def setBwCw1200(self):
         self.width2 = "09"
         self.setBWNW("CW")
-        port.write(b"SH009;")
+        write2port(self, b"SH009;")
     def setBwCw1400(self):
         self.width2 = "10"
         self.setBWNW()
-        port.write(b"SH010;")
+        write2port(self, b"SH010;")
     def setBwCw1700(self):
         self.width2 = "11"
         self.setBWNW("CW")
-        port.write(b"SH011;")
+        write2port(self, b"SH011;")
     def setBwCw2000(self):
         self.width2 = "12"
         self.setBWNW("CW")
-        port.write(b"SH012;")
+        write2port(self, b"SH012;")
     def setBwCw2400(self):
         self.width2 = "13"
         self.setBWNW("CW")
-        port.write(b"SH013;")
+        write2port(self, b"SH013;")
 
     # Bandwidth SSB       
     def setBwSSB0200(self):
         self.width2 = "01"
         self.setBWNW("SSB")
-        port.write(b"SH001;")
+        write2port(self, b"SH001;")
     def setBwSSB0400(self):
         self.width2 = "02"
         self.setBWNW("SSB")
-        port.write(b"SH002;")
+        write2port(self, b"SH002;")
     def setBwSSB0600(self):
         self.width2 = "03"
         self.setBWNW("SSB")
-        port.write(b"SH003;")
+        write2port(self, b"SH003;")
     def setBwSSB0850(self):
         self.width2 = "04"
         self.setBWNW("SSB")
-        port.write(b"SH004;")
+        write2port(self, b"SH004;")
     def setBwSSB1100(self):
         self.width2 = "05"
         self.setBWNW("SSB")
-        port.write(b"SH005;")
+        write2port(self, b"SH005;")
     def setBwSSB1350(self):
         self.width2 = "06"
         self.setBWNW("SSB")
-        port.write(b"SH006;")
+        write2port(self, b"SH006;")
     def setBwSSB1500(self):
         self.width2 = "07"
         self.setBWNW("SSB")
-        port.write(b"SH007;")
+        write2port(self, b"SH007;")
     def setBwSSB1650(self):
         self.width2 = "08"
         self.setBWNW("SSB")
-        port.write(b"SH008;")
+        write2port(self, b"SH008;")
     def setBwSSB1800(self):
         self.width2 = "09"
         self.setBWNW("SSB")
-        port.write(b"SH009;")
+        write2port(self, b"SH009;")
     def setBwSSB1950(self):
         self.width2 = "10"
         self.setBWNW("SSB")
-        port.write(b"SH010;")
+        write2port(self, b"SH010;")
     def setBwSSB2100(self):
         self.width2 = "11"
         self.setBWNW("SSB")
-        port.write(b"SH011;")
+        write2port(self, b"SH011;")
     def setBwSSB2250(self):
         self.width2 = "12"
         self.setBWNW("SSB")
-        port.write(b"SH012;")
+        write2port(self, b"SH012;")
     def setBwSSB2400(self):
         self.width2 = "13"
         self.setBWNW("SSB")
-        port.write(b"SH013;")
+        write2port(self, b"SH013;")
     def setBwSSB2450(self):
         self.width2 = "14"
         self.setBWNW("SSB")
-        port.write(b"SH014;")
+        write2port(self, b"SH014;")
     def setBwSSB2500(self):
         self.width2 = "15"
         self.setBWNW("SSB")
-        port.write(b"SH015;")
+        write2port(self, b"SH015;")
     def setBwSSB2600(self):
         self.width2 = "16"
         self.setBWNW("SSB")
-        port.write(b"SH016;")
+        write2port(self, b"SH016;")
     def setBwSSB2700(self):
         self.width2 = "17"
         self.setBWNW("SSB")
-        port.write(b"SH017;")
+        write2port(self, b"SH017;")
     def setBwSSB2800(self):
         self.width2 = "18"
         self.setBWNW("SSB")
-        port.write(b"SH018;")
+        write2port(self, b"SH018;")
     def setBwSSB2900(self):
         self.width2 = "19"
         self.setBWNW("SSB")
-        port.write(b"SH019;")
+        write2port(self, b"SH019;")
     def setBwSSB3000(self):
         self.width2 = "20"
         self.setBWNW("SSB")
-        port.write(b"SH020;")    
+        write2port(self, b"SH020;")    
 
 class sigButtons(QObject):
     mySignal1 = pyqtSignal(str)
@@ -657,19 +678,15 @@ class RigPoll(QObject):
     mySignal = pyqtSignal(str, str, str, str)
     
     def __init__(self):
-        #print ("Thread1")
         super().__init__()
         
     def __del__(self):
-        #print ("Thread2")
-        #self.wait()
         pass
 
     def work(self):
         while True:
-            #print ("Thread3")
             # Poll VFO A
-            port.write(b"IF;")
+            write2port(self, b"IF;")
             rcv = port.read(27)
             # slicing frequency info, because of byte data
             rcvk = rcv[5:10]          # khz
@@ -678,12 +695,12 @@ class RigPoll(QObject):
             #rcvcd = rcv[13:14]       # clarifier direction +/-
             #rcvco = rcv[14:18]       # clarifier h
             rcvm = rcv[20:21]         # mode
-            # Poll Width of Filter
-            port.write(b"SH0;")
+            # Poll Filter width
+            write2port(self, b"SH0;")
             rcv = port.read(12)
-            rcvw = rcv[3:5]           # width
+            rcvw = rcv[3:5]
             # Poll Output power
-            port.write(b"EX111;")
+            write2port(self, b"EX111;")
             rcv = port.read(12)
             rcvp = rcv[5:8]
             
