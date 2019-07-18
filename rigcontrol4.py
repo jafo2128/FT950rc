@@ -40,17 +40,40 @@ from PyQt5.QtCore import *
 # load external module beacon.py
 import beacons
 
-#**************************
+#******************************
+# Read INI File into dictionary
+#******************************
+fobjINI = open("FT950.ini", "r")
+iniDict = {}
+for iniLines in fobjINI:
+    iniLine = iniLines.strip()
+    if iniLine[0] == "[":
+        continue
+    (iniK, iniV) = iniLine.split("=")
+    iniDict[iniK] = iniV
+    print(iniK, iniV)
+
+#***************************
 # Serial Port Basic Settings
-#**************************
-if sys.platform == "win32":
-	serPort = "COM3"
-else:
-	serPort = "/dev/ttyUSB0"
-port = serial.Serial(serPort, baudrate=38400, timeout=0.1, write_timeout=0.1)
-port.rts = False
-port.dtr = False
-print(serPort)
+#***************************
+try:
+    port = serial.Serial(iniDict['cpName'], baudrate=int(iniDict['cpSpeed']) , timeout=float(iniDict['cpTimeoutRead']), write_timeout=float(iniDict['cpTimeoutWrite']))
+    if iniDict['cpLineRTS'] == "Low":
+        port.rts = False
+    if iniDict['cpLineDTR'] == "Low":
+        port.dtr = False
+except:
+    if sys.platform == "win32":
+        serPort = "COM3"
+    else:
+        serPort = "/dev/ttyUSB0"
+        port = serial.Serial(serPort, baudrate=38400, timeout=0.1, write_timeout=0.1)
+        port.rts = False
+        port.dtr = False
+    print(serPort)
+
+
+
 
 #**************************
 # Audio Devices List
