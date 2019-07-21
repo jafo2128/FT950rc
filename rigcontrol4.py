@@ -399,7 +399,7 @@ class RigControl(QtWidgets.QMainWindow):
     # Set AF Gain
     def setAFgain(self):
         locgain = self.ui.slidAudio.value()
-        print(locgain)
+        locgain = locgain * 2.5     # to convert value from slider 0-100% to TRX 0-255
         if locgain < 100:
             locgain1 = ( "AG00" + str(int(locgain)) + ";" ).encode('utf-8')
         elif locgain < 10:
@@ -762,8 +762,9 @@ class RigPoll(QObject):
             write2port(self, b"AG0;")
             rcv = port.read(12)
             rcvg = rcv[3:6]
-
-            gain = str(rcvg,'utf-8')
+            rcvg = int(float(rcvg) / 2.5)   # to adapt slider 0-100% instead of 0-255 from TRX
+            gain = str(rcvg)
+            
             mode = str(rcvm,'utf-8')
             vfo = str(rcvk,'utf-8')+"."+str(rcvh,'utf-8')
             width = str(rcvw, 'utf-8')
