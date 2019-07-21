@@ -378,7 +378,7 @@ class RigControl(QtWidgets.QMainWindow):
         if gain != self.gain1:
             self.gain1 = gain
             self.ui.slidAudio.setValue(int(gain))
-            AFgain = "AF-Gain " + str(int(gain))
+            AFgain = "AF-Gain " + str(int(gain)) + "%"
             self.ui.lblAudio.setText(AFgain)
             print(self.ui.slidAudio.value())
 
