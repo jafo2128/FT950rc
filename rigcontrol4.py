@@ -91,11 +91,10 @@ except:
 strBand = ""
 
 
-#######################################
+#=====================================
 # INITIALIZE UI with actual RIG DATA
 # Read Rig Data to set starting values
-#**************************************
-
+#=====================================
 # READ POWER
 try:
     port.write(b"EX111;")
@@ -105,7 +104,6 @@ try:
 except:
     #print("Timeout1")
     pass
-
 # READ FREQUENCY and MODE 
 try:
     port.write(b"IF;")
@@ -122,7 +120,6 @@ except:
     rcvk = b"3500"
     rcvh = b"200"
     rcvm = b"2"
-
 # READ FILTER Width
 try:
     port.write(b"SH0;")
@@ -133,8 +130,12 @@ except:
     rcvw = b"111"
 
 print(str(rcvk,'utf-8') + str(rcvh,'utf-8') + " " + str(rcvm,'utf-8') + " " + str(rcvw,'utf-8'))
-##### INITIALIZE UI END #####
+#===== INITIALIZE UI END =====#
 
+
+#=======================================#
+# Function write2port                   #
+#=======================================#
 def write2port(self, strPortData):
     #print(strPortData)
     try:
@@ -142,7 +143,11 @@ def write2port(self, strPortData):
     except:
         #print("COM-Timeout")
         pass
+#===== End of function write2port  =====#
 
+#########################################
+### Class RigControl Start            ###
+#########################################
 class RigControl(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(RigControl, self).__init__(parent)
@@ -150,7 +155,7 @@ class RigControl(QtWidgets.QMainWindow):
         # Thread for polling the RIG
         self.thread = QThread()
         self.w = RigPoll()
-        self.w.mySignal[str, str, str, str].connect(self.onFinished)
+        self.w.mySignal[str, str, str, str, str].connect(self.onFinished)
         self.w.moveToThread(self.thread)
         self.thread.started.connect(self.w.work)
         self.thread.start()
@@ -170,6 +175,7 @@ class RigControl(QtWidgets.QMainWindow):
         # Variables
         self.mode1=""
         self.pwr1=""
+        self.gain1=""
         self.width1=""
         self.width2=""
         
@@ -244,12 +250,13 @@ class RigControl(QtWidgets.QMainWindow):
         self.ui.btnBwSSB2900.clicked.connect(self.setBwSSB2900)
         self.ui.btnBwSSB3000.clicked.connect(self.setBwSSB3000)
         self.ui.slidPower.valueChanged.connect(self.setPwr)
+        self.ui.slidAudio.valueChanged.connect(self.setAFgain)
 
     def onExit(self):
         self.close()
 
-    @pyqtSlot(str, str, str, str)
-    def onFinished(self, vfo, mode, width, pwr):
+    @pyqtSlot(str, str, str, str, str)
+    def onFinished(self, vfo, mode, width, pwr, gain):
         # Frequency
         self.ui.lcdVFO.display(vfo)
         # MODE
@@ -367,10 +374,19 @@ class RigControl(QtWidgets.QMainWindow):
             self.ui.lblPower.setText(Pout)
             #print(self.ui.slidPower.value())
 
+        # AF-Gain
+        if gain != self.gain1:
+            self.gain1 = gain
+            self.ui.slidAudio.setValue(int(gain))
+            AFgain = "AF-Gain " + str(int(gain))
+            self.ui.lblAudio.setText(AFgain)
+            print(self.ui.slidAudio.value())
+
     def done(self, test):
         print(test)
         exit()
 
+    # Set RF Power
     def setPwr(self):
         locpwr = self.ui.slidPower.value()
         print(locpwr)
@@ -379,6 +395,18 @@ class RigControl(QtWidgets.QMainWindow):
         else:
             locpwr1 = ( "EX1110" + str(int(locpwr)) + ";" ).encode('utf-8')
         write2port(self, locpwr1)
+    
+    # Set AF Gain
+    def setAFgain(self):
+        locgain = self.ui.slidAudio.value()
+        print(locgain)
+        if locgain < 100:
+            locgain1 = ( "AG00" + str(int(locgain)) + ";" ).encode('utf-8')
+        elif locgain < 10:
+            locgain1 = ( "AG000" + str(int(locgain)) + ";" ).encode('utf-8')
+        else:
+            locgain1 = ( "AG0" + str(int(locgain)) + ";" ).encode('utf-8')
+        write2port(self, locgain1)
 
     # SET VFO to selected Station
     # get row and col of clicked cell
@@ -692,13 +720,17 @@ class RigControl(QtWidgets.QMainWindow):
     def setBwSSB3000(self):
         self.width2 = "20"
         self.setBWNW("SSB")
-        write2port(self, b"SH020;")    
+        write2port(self, b"SH020;")
+###### END of class RigControl ######
 
 class sigButtons(QObject):
     mySignal1 = pyqtSignal(str)
-        
+
+#########################################
+### Class RigPoll Start
+#########################################        
 class RigPoll(QObject):    
-    mySignal = pyqtSignal(str, str, str, str)
+    mySignal = pyqtSignal(str, str, str, str, str)
     
     def __init__(self):
         super().__init__()
@@ -726,13 +758,18 @@ class RigPoll(QObject):
             write2port(self, b"EX111;")
             rcv = port.read(12)
             rcvp = rcv[5:8]
-            
+            # Poll AF Gain
+            write2port(self, b"AG0;")
+            rcv = port.read(12)
+            rcvg = rcv[3:6]
+
+            gain = str(rcvg,'utf-8')
             mode = str(rcvm,'utf-8')
             vfo = str(rcvk,'utf-8')+"."+str(rcvh,'utf-8')
             width = str(rcvw, 'utf-8')
             pwr = str(rcvp,'utf-8')
-            self.mySignal.emit(vfo, mode, width, pwr)
-
+            self.mySignal.emit(vfo, mode, width, pwr, gain)
+###### END of class RigPoll ######
 
 '''
 # SET Audio Device to selected one
