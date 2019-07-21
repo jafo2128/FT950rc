@@ -367,20 +367,40 @@ class RigControl(QtWidgets.QMainWindow):
             elif width == "20":
                 self.ui.btnBwSSB3000.setStyleSheet("background-color: qlineargradient(spread:pad, x1:0, y1:1, x2:0, y2:0, stop:0 rgba(230,255,230, 255), stop:1 rgba(200, 230, 200, 255))")
         # Power
-        if pwr != self.pwr1:
-            self.pwr1 = pwr
-            self.ui.slidPower.setValue(int(pwr))
-            Pout = "RFout " + str(int(pwr)) + " Watt"
-            self.ui.lblPower.setText(Pout)
-            #print(self.ui.slidPower.value())
+        try:
+            float(pwr)
+            if pwr != self.pwr1:
+                self.pwr1 = pwr
+                self.ui.slidPower.setValue(int(pwr))
+                Pout = "RFout " + str(int(pwr)) + " Watt"
+                self.ui.lblPower.setText(Pout)
+                print(self.ui.slidPower.value())
+        except:
+            pwr = "5"
+            if pwr != self.pwr1:
+                self.pwr1 = pwr
+                self.ui.slidPower.setValue(int(pwr))
+                Pout = "RFout " + str(int(pwr)) + " Watt"
+                self.ui.lblPower.setText(Pout)
+                print(self.ui.slidPower.value())
 
         # AF-Gain
-        if gain != self.gain1:
-            self.gain1 = gain
-            self.ui.slidAudio.setValue(int(gain))
-            AFgain = "AF-Gain " + str(int(gain)) + "%"
-            self.ui.lblAudio.setText(AFgain)
-            print(self.ui.slidAudio.value())
+        try:
+            float(gain)
+            if gain != self.gain1:
+                self.gain1 = gain
+                self.ui.slidAudio.setValue(int(gain) / 2.5)
+                AFgain = "AF-Gain " + str(int(int(gain) / 2.5)) + "%"
+                self.ui.lblAudio.setText(AFgain)
+                print(self.ui.slidAudio.value())
+        except:
+            gain = "10"
+            if gain != self.gain1:
+                self.gain1 = gain
+                self.ui.slidAudio.setValue(int(gain) / 2.5)
+                AFgain = "AF-Gain " + str(int(int(gain) / 2.5)) + "%"
+                self.ui.lblAudio.setText(AFgain)
+                print(self.ui.slidAudio.value())
 
     def done(self, test):
         print(test)
@@ -762,14 +782,14 @@ class RigPoll(QObject):
             write2port(self, b"AG0;")
             rcv = port.read(12)
             rcvg = rcv[3:6]
-            rcvg = int(float(rcvg) / 2.5)   # to adapt slider 0-100% instead of 0-255 from TRX
-            gain = str(rcvg)
             
             mode = str(rcvm,'utf-8')
             vfo = str(rcvk,'utf-8')+"."+str(rcvh,'utf-8')
             width = str(rcvw, 'utf-8')
             pwr = str(rcvp,'utf-8')
+            gain = str(rcvg,'utf-8')
             self.mySignal.emit(vfo, mode, width, pwr, gain)
+
 ###### END of class RigPoll ######
 
 '''
