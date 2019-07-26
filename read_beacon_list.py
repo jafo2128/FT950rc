@@ -76,7 +76,7 @@ def ReadG3USF(strFileIn, dbStations, dbMode):
             strStation = line[8:16].strip()
             strLoc = line[31:37].strip()
             
-            if upper(strLoc[:4]) != "WSPR"
+            if upper(strLoc[:4]) != "WSPR":
                 # DB Insert
                 
                 curs.execute("INSERT INTO stations VALUES (?, ?, ?);", (intFreq, strStation, strLoc))
