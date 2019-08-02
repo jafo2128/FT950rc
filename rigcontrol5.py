@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
-#  rigcontrol4.py
+#  rigcontrol5.py
 #
 #  Copyright 2016 Michael Steiner, OE1MSB <michael@msteiner.at>
 #  
@@ -160,6 +160,10 @@ class RigControl(QtWidgets.QMainWindow):
     def __init__(self, parent=None):
         super(RigControl, self).__init__(parent)
 
+        # Set global Variables
+        self.strBand = "All"
+        self.strSortArg = ""
+
         # Thread for polling the RIG
         self.thread = QThread()
         self.w = RigPoll()
@@ -171,7 +175,7 @@ class RigControl(QtWidgets.QMainWindow):
         #init user interface
         self.ui = uic.loadUi("rigcontrol4.ui", self)
         # Configure Stations Table headers
-        #self.ui.tblStations.setHorizontalHeaderLabels(["Frequency", "Station", "Locator", "Location", "Continent"])
+        self.ui.tblStations.setHorizontalHeaderLabels(["Frequency", "Station", "Locator", "Location", "Continent"])
         #self.ui.tblStations.sortItems(0, QtCore.Qt.AscendingOrder)
         # Configure LCD Display
         self.ui.lcdVFO.setSegmentStyle(QtWidgets.QLCDNumber.Flat)
@@ -222,18 +226,30 @@ class RigControl(QtWidgets.QMainWindow):
         self.ui.cbxConAN.clicked.connect(self.srtStation)
         self.ui.cbxConUD.clicked.connect(self.srtStation)
 
-        self.ui.btnBnd160.clicked.connect(self.setBnd160m)
-        self.ui.btnBnd80.clicked.connect(self.setBnd80m)
-        self.ui.btnBnd60.clicked.connect(self.setBnd60m)
-        self.ui.btnBnd40.clicked.connect(self.setBnd40m)
-        self.ui.btnBnd30.clicked.connect(self.setBnd30m)
-        self.ui.btnBnd20.clicked.connect(self.setBnd20m)
-        self.ui.btnBnd17.clicked.connect(self.setBnd17m)
-        self.ui.btnBnd15.clicked.connect(self.setBnd15m)
-        self.ui.btnBnd12.clicked.connect(self.setBnd12m)
-        self.ui.btnBnd10.clicked.connect(self.setBnd10m)
-        self.ui.btnBnd6.clicked.connect(self.setBnd6m)
-        self.ui.btnBndAll.clicked.connect(self.setBndAll)
+        #self.ui.btnBnd160.clicked.connect(self.setBnd160m)
+        self.ui.btnBnd160.clicked.connect(lambda: self.setTbl("160"))
+        #self.ui.btnBnd80.clicked.connect(self.setBnd80m)
+        self.ui.btnBnd80.clicked.connect(lambda: self.setTbl("80"))
+        #self.ui.btnBnd60.clicked.connect(self.setBnd60m)
+        self.ui.btnBnd60.clicked.connect(lambda: self.setTbl("60"))
+        #self.ui.btnBnd40.clicked.connect(self.setBnd40m)
+        self.ui.btnBnd40.clicked.connect(lambda: self.setTbl("40"))
+        #self.ui.btnBnd30.clicked.connect(self.setBnd30m)
+        self.ui.btnBnd30.clicked.connect(lambda: self.setTbl("30"))
+        #self.ui.btnBnd20.clicked.connect(self.setBnd20m)
+        self.ui.btnBnd20.clicked.connect(lambda: self.setTbl("20"))
+        #self.ui.btnBnd17.clicked.connect(self.setBnd17m)
+        self.ui.btnBnd17.clicked.connect(lambda: self.setTbl("17"))
+        #self.ui.btnBnd15.clicked.connect(self.setBnd15m)
+        self.ui.btnBnd15.clicked.connect(lambda: self.setTbl("15"))
+        #self.ui.btnBnd12.clicked.connect(self.setBnd12m)
+        self.ui.btnBnd12.clicked.connect(lambda: self.setTbl("12"))
+        #self.ui.btnBnd10.clicked.connect(self.setBnd10m)
+        self.ui.btnBnd10.clicked.connect(lambda: self.setTbl("10"))
+        #self.ui.btnBnd6.clicked.connect(self.setBnd6m)
+        self.ui.btnBnd6.clicked.connect(lambda: self.setTbl("6"))
+        #self.ui.btnBndAll.clicked.connect(self.setBndAll)
+        self.ui.btnBndAll.clicked.connect(lambda: self.setTbl("All"))
 
         self.ui.btnBwCw100.clicked.connect(self.setBwCw100)
         self.ui.btnBwCw200.clicked.connect(self.setBwCw200)
@@ -468,6 +484,26 @@ class RigControl(QtWidgets.QMainWindow):
         i = self.ui.rbtSrtCall.isChecked()
         print(i)
     
+    # Set Table with station Info
+    def setTbl(self, strBand):
+        dicBand = {
+        "160":["1800000","2000000"],    
+        "80":["3500000","3800000"],
+        "60":["5100000","5500000"],
+        "40":["7000000","7200000"],
+        "30":["10100000","10150000"],
+        "20":["14000000","14350000"],
+        "17":["18068000","18168000"],
+        "15":["21000000","21450000"],
+        "12":["24890000","24990000"],
+        "10":["28000000","29700000"],
+        "6":["50000000","52500000"],
+        "All":["1800000","52500000"]
+        }
+        (strBandLo, strBandHi) = dicBand[strBand]
+        self.setBand(strBandLo, strBandHi)
+
+
     # SET 160m Band
     def setBnd160m(self):
         strBandLo = "1800000"
@@ -534,7 +570,7 @@ class RigControl(QtWidgets.QMainWindow):
     #==================================================
     def setBand(self, strBandLo, strBandHi):
         self.ui.tblStations.clear()
-        #self.ui.tblStations.setHorizontalHeaderLabels(["Frequency", "Station", "Locator", "Location", "Continent"])
+        self.ui.tblStations.setHorizontalHeaderLabels(["Frequency", "Station", "Locator", "Location", "Continent"])
         #self.ui.tblStations.sortItems(0, QtCore.Qt.AscendingOrder)
 
         strOrder = ""
@@ -549,11 +585,11 @@ class RigControl(QtWidgets.QMainWindow):
         
         # SET ORDER
         if(self.ui.rbtSrtCall.isChecked()):
-            #strOrder = " ORDER BY " + "station"
-            strOrder = ""
+            strOrder = " ORDER BY " + "station"
+            #strOrder = ""
         elif(self.ui.rbtSrtFreq.isChecked()):
-            #strOrder = " ORDER BY " + "freq"
-            strOrder = ""
+            strOrder = " ORDER BY " + "freq"
+            #strOrder = ""
         else:
             strOrder = ""
 
