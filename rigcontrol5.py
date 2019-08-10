@@ -29,7 +29,7 @@ import array
 
 # used by class RigControl
 import sys
-#import time
+import time
 import serial
 import pyaudio
 
@@ -173,7 +173,7 @@ class RigControl(QtWidgets.QMainWindow):
         self.thread.start()
 
         #init user interface
-        self.ui = uic.loadUi("rigcontrol4.ui", self)
+        self.ui = uic.loadUi("rigcontrol5.ui", self)
         # Configure Stations Table headers
         self.ui.tblStations.setHorizontalHeaderLabels(["Frequency", "Station", "Locator", "Location", "Continent"])
         #self.ui.tblStations.sortItems(0, QtCore.Qt.AscendingOrder)
@@ -226,29 +226,17 @@ class RigControl(QtWidgets.QMainWindow):
         self.ui.cbxConAN.clicked.connect(self.srtStation)
         self.ui.cbxConUD.clicked.connect(self.srtStation)
 
-        #self.ui.btnBnd160.clicked.connect(self.setBnd160m)
         self.ui.btnBnd160.clicked.connect(lambda: self.setTbl("160"))
-        #self.ui.btnBnd80.clicked.connect(self.setBnd80m)
         self.ui.btnBnd80.clicked.connect(lambda: self.setTbl("80"))
-        #self.ui.btnBnd60.clicked.connect(self.setBnd60m)
         self.ui.btnBnd60.clicked.connect(lambda: self.setTbl("60"))
-        #self.ui.btnBnd40.clicked.connect(self.setBnd40m)
         self.ui.btnBnd40.clicked.connect(lambda: self.setTbl("40"))
-        #self.ui.btnBnd30.clicked.connect(self.setBnd30m)
         self.ui.btnBnd30.clicked.connect(lambda: self.setTbl("30"))
-        #self.ui.btnBnd20.clicked.connect(self.setBnd20m)
         self.ui.btnBnd20.clicked.connect(lambda: self.setTbl("20"))
-        #self.ui.btnBnd17.clicked.connect(self.setBnd17m)
         self.ui.btnBnd17.clicked.connect(lambda: self.setTbl("17"))
-        #self.ui.btnBnd15.clicked.connect(self.setBnd15m)
         self.ui.btnBnd15.clicked.connect(lambda: self.setTbl("15"))
-        #self.ui.btnBnd12.clicked.connect(self.setBnd12m)
         self.ui.btnBnd12.clicked.connect(lambda: self.setTbl("12"))
-        #self.ui.btnBnd10.clicked.connect(self.setBnd10m)
         self.ui.btnBnd10.clicked.connect(lambda: self.setTbl("10"))
-        #self.ui.btnBnd6.clicked.connect(self.setBnd6m)
         self.ui.btnBnd6.clicked.connect(lambda: self.setTbl("6"))
-        #self.ui.btnBndAll.clicked.connect(self.setBndAll)
         self.ui.btnBndAll.clicked.connect(lambda: self.setTbl("All"))
 
         self.ui.btnBwCw100.clicked.connect(self.setBwCw100)
@@ -285,6 +273,13 @@ class RigControl(QtWidgets.QMainWindow):
         self.ui.btnBwSSB3000.clicked.connect(self.setBwSSB3000)
         self.ui.slidPower.valueChanged.connect(self.setPwr)
         self.ui.slidAudio.valueChanged.connect(self.setAFgain)
+
+        self.ui.btnScan.clicked.connect(self.ScanBeacon)
+
+        # Set Station Table initially to all bands
+        self.setTbl(self.strBand)
+
+    ###### End of ___Init___ ######
 
     def onExit(self):
         self.close()
@@ -479,13 +474,36 @@ class RigControl(QtWidgets.QMainWindow):
         qrg = ("FA" + textqrg + ";").encode('utf-8')
         write2port(self, qrg)
     
+    #========================
+    # SCAN selected Beacons
+    #========================
+    def ScanBeacon(self):
+        intRows = self.ui.tblStations.rowCount()
+        tblRow = 0
+        for tblRow in range(0, intRows):
+            i = self.ui.tblStations.item(tblRow, 0)
+            text = i.text()
+            print(text)
+            textsplit = text.split(" ")
+            textqrg = textsplit[0]
+            if len(textqrg) == 7:
+                textqrg = "0" + textqrg
+            qrg = ("FA" + textqrg + ";").encode('utf-8')
+            write2port(self, qrg)
+            time.sleep(1.0)
+
     # SORT Station
     def srtStation(self, event):
         i = self.ui.rbtSrtCall.isChecked()
         print(i)
+        print(self.strBand)
+        self.setTbl(self.strBand)
     
     # Set Table with station Info
     def setTbl(self, strBand):
+        print(strBand)
+        self.strBand = strBand
+        
         dicBand = {
         "160":["1800000","2000000"],    
         "80":["3500000","3800000"],
@@ -502,68 +520,6 @@ class RigControl(QtWidgets.QMainWindow):
         }
         (strBandLo, strBandHi) = dicBand[strBand]
         self.setBand(strBandLo, strBandHi)
-
-
-    # SET 160m Band
-    def setBnd160m(self):
-        strBandLo = "1800000"
-        strBandHi = "2000000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 80m Band
-    def setBnd80m(self):    
-        strBandLo = "3500000"
-        strBandHi = "3800000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 60m Band
-    def setBnd60m(self):    
-        strBandLo = "5100000"
-        strBandHi = "5500000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 40m Band
-    def setBnd40m(self):
-        strBandLo = "7000000"
-        strBandHi = "7200000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 30m Band
-    def setBnd30m(self):    
-        strBandLo = "10100000"
-        strBandHi = "10150000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 20m Band
-    def setBnd20m(self):
-        strBandLo = "14000000"
-        strBandHi = "14350000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 17m Band
-    def setBnd17m(self):    
-        strBandLo = "18068000"
-        strBandHi = "18168000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 15m Band
-    def setBnd15m(self):
-        strBandLo = "21000000"
-        strBandHi = "21450000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 12m Band
-    def setBnd12m(self):    
-        strBandLo = "24890000"
-        strBandHi = "24990000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 10m Band
-    def setBnd10m(self):    
-        strBandLo = "28000000"
-        strBandHi = "29700000"
-        self.setBand(strBandLo, strBandHi)
-    # SET 6m Band
-    def setBnd6m(self):    
-        strBandLo = "50000000"
-        strBandHi = "52500000"
-        self.setBand(strBandLo, strBandHi)
-    # SET All Bands
-    def setBndAll(self):    
-        strBandLo = "1800000"
-        strBandHi = "52500000"
-        self.setBand(strBandLo, strBandHi)    
 
     #==================================================
     # SET Band
